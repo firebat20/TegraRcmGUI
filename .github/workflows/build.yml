@@ -13,11 +13,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Install Qt
+      id: install-qt
       uses: jurplel/install-qt-action@v4
       with:
         version: '6.6.0'
@@ -26,13 +27,14 @@ jobs:
         arch: 'win64_msvc2019_64'
 
     - name: Configure CMake
-      run: cmake -B build -S TegraRcmGUI -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -S TegraRcmGUI -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:QT_DIR"
+      shell: pwsh
 
     - name: Build
       run: cmake --build build --config Release
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: TegraRcmGUI-Windows
         path: |

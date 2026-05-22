@@ -1,38 +1,29 @@
-#include "MainWindow.h"
 #include <QApplication>
-#include <QStyleFactory>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickStyle>
+#include <QCoreApplication>
+#include "AppController.h"
 
 int main(int argc, char *argv[])
 {
-    // Enable high DPI scaling
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
-    QApplication a(argc, argv);
-    
-    // Apply a modern dark theme style using Qt Fusion as a base
-    a.setStyle(QStyleFactory::create("Fusion"));
+    QCoreApplication::setOrganizationName("TegraRcm");
+    QCoreApplication::setApplicationName("TegraRcmGUI");
 
-    QPalette darkPalette;
-    darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
-    darkPalette.setColor(QPalette::WindowText, Qt::white);
-    darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
-    darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
-    darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
-    darkPalette.setColor(QPalette::ToolTipText, Qt::white);
-    darkPalette.setColor(QPalette::Text, Qt::white);
-    darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
-    darkPalette.setColor(QPalette::ButtonText, Qt::white);
-    darkPalette.setColor(QPalette::BrightText, Qt::red);
-    darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
-    darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-    darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+    QApplication app(argc, argv);
 
-    a.setPalette(darkPalette);
-    a.setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+    QQuickStyle::setStyle("Fusion");
 
-    MainWindow w;
-    w.show();
+    AppController controller;
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("appController", &controller);
+    engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
-    return a.exec();
+    if (engine.rootObjects().isEmpty())
+        return -1;
+
+    return app.exec();
 }

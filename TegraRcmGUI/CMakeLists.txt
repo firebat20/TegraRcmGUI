@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-project(TegraRcmGUI VERSION 1.0.0 LANGUAGES CXX)
+project(TegraRcmGUI VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6
-find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Quick QuickControls2 Concurrent QuickDialogs REQUIRED)
 
 # Core Backend files (No MFC dependencies)
 set(BACKEND_SOURCES
@@ -25,18 +25,18 @@ set(BACKEND_HEADERS
     WinHandle.h
 )
 
-# Future Qt Frontend files
+# Qt Quick frontend files
 set(FRONTEND_SOURCES
     main.cpp
-    MainWindow.cpp
+    AppController.cpp
 )
 
 set(FRONTEND_HEADERS
-    MainWindow.h
+    AppController.h
 )
 
-set(FRONTEND_FORMS
-    mainwindow.ui
+set(FRONTEND_RESOURCES
+    qml.qrc
 )
 
 # Add autogen tools for Qt
@@ -49,7 +49,7 @@ add_executable(${PROJECT_NAME}_Qt
     ${BACKEND_HEADERS}
     ${FRONTEND_SOURCES}
     ${FRONTEND_HEADERS}
-    ${FRONTEND_FORMS}
+    ${FRONTEND_RESOURCES}
 )
 
 # Link against Qt6 and required Windows libraries
@@ -57,6 +57,10 @@ target_link_libraries(${PROJECT_NAME}_Qt PRIVATE
     Qt6::Core 
     Qt6::Gui 
     Qt6::Widgets
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::QuickDialogs
+    Qt6::Concurrent
     setupapi
     # libusbk.lib (Need to ensure paths to static libs are set if required)
 )
