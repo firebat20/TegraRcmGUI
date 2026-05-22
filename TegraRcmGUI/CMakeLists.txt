@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6
-find_package(Qt6 COMPONENTS Core Gui Widgets Quick QuickControls2 Concurrent QuickDialogs REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Quick QuickControls2 Concurrent REQUIRED)
 
 # Core Backend files (No MFC dependencies)
 set(BACKEND_SOURCES
