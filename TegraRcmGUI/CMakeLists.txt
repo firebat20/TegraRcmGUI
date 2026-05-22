@@ -59,7 +59,6 @@ target_link_libraries(${PROJECT_NAME}_Qt PRIVATE
     Qt6::Widgets
     Qt6::Quick
     Qt6::QuickControls2
-    Qt6::QuickDialogs
     Qt6::Concurrent
     setupapi
     # libusbk.lib (Need to ensure paths to static libs are set if required)
