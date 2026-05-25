@@ -7,6 +7,8 @@
 #include <QPainter>
 #include <QtConcurrent/QtConcurrentRun>
 #include <QMetaObject>
+#include <QUrl>
+#include <QVariant>
 
 AppController::AppController(QObject* parent)
     : QObject(parent)
@@ -103,8 +105,22 @@ void AppController::setMinimizeToTray(bool enabled)
     emit minimizeToTrayChanged();
 }
 
-void AppController::setPayloadPath(const QString& path)
+void AppController::setPayloadPath(const QVariant& pathOrUrl)
 {
+    QString path;
+    if (pathOrUrl.userType() == QMetaType::QUrl) {
+        path = pathOrUrl.toUrl().toLocalFile();
+    } else if (pathOrUrl.canConvert<QUrl>()) {
+        QUrl url = pathOrUrl.toUrl();
+        if (url.isLocalFile()) {
+            path = url.toLocalFile();
+        } else {
+            path = pathOrUrl.toString();
+        }
+    } else {
+        path = pathOrUrl.toString();
+    }
+
     if (path == m_payloadPath)
         return;
 

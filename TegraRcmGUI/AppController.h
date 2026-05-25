@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QFutureWatcher>
 #include <QSystemTrayIcon>
+#include <QVariant>
 #include <memory>
 #include "PayloadController.h"
 
@@ -35,7 +36,7 @@ public:
     Q_INVOKABLE void setTheme(const QString& themeName);
     Q_INVOKABLE void setAutoInject(bool enabled);
     Q_INVOKABLE void setMinimizeToTray(bool enabled);
-    Q_INVOKABLE void setPayloadPath(const QString& path);
+    Q_INVOKABLE void setPayloadPath(const QVariant& pathOrUrl);
     Q_INVOKABLE void injectPayload(const QString& payloadPath = QString());
     Q_INVOKABLE void addFavorite(const QString& payloadPath);
     Q_INVOKABLE void removeFavorite(const QString& payloadPath);

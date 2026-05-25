@@ -6,7 +6,7 @@
  *
  */
 
-#include "stdafx.h"
+#include "Win32Def.h"
 #include "TegraRcmSmash.h"
 class RCMDeviceHacker
 {

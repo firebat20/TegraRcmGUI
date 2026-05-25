@@ -1,7 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtCore
 
 ApplicationWindow {
     id: root
@@ -44,15 +45,14 @@ ApplicationWindow {
     FileDialog {
         id: payloadDialog
         title: qsTr("Select Payload")
-        folder: StandardPaths.home
+        currentFolder: StandardPaths.writableLocation(StandardPaths.HomeLocation)
         nameFilters: [qsTr("Bin Files (*.bin)"), qsTr("All Files (*)")]
-        selectMultiple: false
         onAccepted: {
-            appController.setPayloadPath(fileUrl.toLocalFile())
+            appController.setPayloadPath(selectedFile)
         }
     }
 
-    TabView {
+    ColumnLayout {
         anchors {
             top: parent.top
             topMargin: header.height
@@ -61,12 +61,90 @@ ApplicationWindow {
             bottom: parent.bottom
             bottomMargin: 0
         }
-        currentIndex: 0
+        spacing: 0
 
-        Tab {
-            title: qsTr("Inject")
+        TabBar {
+            id: tabBar
+            Layout.fillWidth: true
+            currentIndex: stackLayout.currentIndex
+
+            TabButton {
+                text: qsTr("Inject")
+                contentItem: Text {
+                    text: parent.text
+                    font: parent.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: parent.checked ? root.palette.highlight : root.palette.windowText
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                background: Rectangle {
+                    implicitWidth: 100
+                    implicitHeight: 40
+                    opacity: enabled ? 1 : 0.3
+                    color: parent.checked ? (appController.theme === "Light" ? "#e5e7eb" : "#2d3748") : "transparent"
+                    border.color: parent.checked ? root.palette.highlight : "transparent"
+                    border.width: 1
+                    radius: 8
+                }
+            }
+
+            TabButton {
+                text: qsTr("Settings")
+                contentItem: Text {
+                    text: parent.text
+                    font: parent.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: parent.checked ? root.palette.highlight : root.palette.windowText
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                background: Rectangle {
+                    implicitWidth: 100
+                    implicitHeight: 40
+                    opacity: enabled ? 1 : 0.3
+                    color: parent.checked ? (appController.theme === "Light" ? "#e5e7eb" : "#2d3748") : "transparent"
+                    border.color: parent.checked ? root.palette.highlight : "transparent"
+                    border.width: 1
+                    radius: 8
+                }
+            }
+
+            TabButton {
+                text: qsTr("Logs")
+                contentItem: Text {
+                    text: parent.text
+                    font: parent.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: parent.checked ? root.palette.highlight : root.palette.windowText
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                background: Rectangle {
+                    implicitWidth: 100
+                    implicitHeight: 40
+                    opacity: enabled ? 1 : 0.3
+                    color: parent.checked ? (appController.theme === "Light" ? "#e5e7eb" : "#2d3748") : "transparent"
+                    border.color: parent.checked ? root.palette.highlight : "transparent"
+                    border.width: 1
+                    radius: 8
+                }
+            }
+        }
+
+        StackLayout {
+            id: stackLayout
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: tabBar.currentIndex
+
+            // Page 1: Inject
             Rectangle {
-                anchors.fill: parent
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 color: "transparent"
                 ColumnLayout {
                     anchors.fill: parent
@@ -156,12 +234,11 @@ ApplicationWindow {
                     }
                 }
             }
-        }
 
-        Tab {
-            title: qsTr("Settings")
+            // Page 2: Settings
             ScrollView {
-                anchors.fill: parent
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 contentWidth: parent.width
                 ColumnLayout {
                     width: parent.width
@@ -242,12 +319,11 @@ ApplicationWindow {
                     }
                 }
             }
-        }
 
-        Tab {
-            title: qsTr("Logs")
+            // Page 3: Logs
             ColumnLayout {
-                anchors.fill: parent
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 anchors.margins: 20
                 spacing: 12
 
