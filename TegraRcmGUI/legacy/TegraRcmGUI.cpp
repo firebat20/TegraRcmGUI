@@ -99,7 +99,6 @@ BOOL CTegraRcmGUIApp::InitInstance()
 	if (oInfo.IsAutostart()) {
 		dlg.AUTOSTART = TRUE;
 	}
-	m_pMainWnd = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{

@@ -46,7 +46,7 @@ public:
 	void BitmapDisplay(int IMG);
 	void LookUp();
 	int Smasher(TCHAR args[], BOOL bInheritHandles = TRUE);
-	char* GetRelativeFilename(char *currentDirectory, char *absoluteFilename);
+	std::string GetRelativeFilename(const std::string& currentDirectory, const std::string& absoluteFilename);
 	
 
 	void KillRunningProcess(CString process);
@@ -81,7 +81,7 @@ public:
 	COLORREF RedRGB = RGB(255, 0, 0);
 	COLORREF GreenRGB = RGB(0, 100, 0);
 
-	TCHAR* PAYLOAD_FILE;
+	CString PAYLOAD_FILE;
 	CArray <CString, CString> Favorites;
 	CDialog* m_Parent;
 	CDialog* m_Ctrltb1;
@@ -122,7 +122,7 @@ public:
 private:
 	HWND m_hWnd;
 	TegraRcmSmash m_Device;
-	int m_RC = -99;;
+	int m_RC = -99;
 	BOOL FIRST_LOOKUP = TRUE;
 
 };

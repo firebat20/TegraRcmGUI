@@ -120,12 +120,11 @@ BOOL DialogTab01::OnInitDialog()
 		{
 			Item = fav;
 		}
-		pListBox->AddString(_tcsdup(Item));
+		pListBox->AddString(Item);
 			
 		wstring wcsPath(csPath);
 		string scsPath(wcsPath.begin(), wcsPath.end());
-		m_TegraRcm->AppendLog("Add favorites to listbox");
-		m_TegraRcm->AppendLog(scsPath);		
+		m_TegraRcm->AppendLog(scsPath);        
 	}
 
 	CFont* pFont = GetFont();
@@ -158,7 +157,7 @@ void DialogTab01::OnEnChangePath()
 {
 	CString file;
 	GetDlgItem(PAYLOAD_PATH)->GetWindowTextW(file);
-	PAYLOAD_FILE = _tcsdup(file);
+	PAYLOAD_FILE = file;
 
 	if (!PREVENT_AUTOINJECT)
 	{
@@ -218,9 +217,9 @@ void DialogTab01::InjectPayload()
 {
 	CString file;
 	this->GetDlgItem(PAYLOAD_PATH)->GetWindowTextW(file);
-	PAYLOAD_FILE = _tcsdup(file);
+	PAYLOAD_FILE = file;
 
-	if (PAYLOAD_FILE == nullptr) {
+	if (PAYLOAD_FILE.IsEmpty()) {
 		m_TegraRcm->BitmapDisplay(LOAD_ERROR);
 		m_TegraRcm->SendUserMessage("No file selected", INVALID);
 		return;
@@ -237,7 +236,7 @@ void DialogTab01::InjectPayload()
 	GetParent()->UpdateWindow();
 
 	TCHAR cmd[MAX_PATH] = TEXT("\"");
-	lstrcat(cmd, PAYLOAD_FILE);
+	lstrcat(cmd, (LPCTSTR)PAYLOAD_FILE);
 	lstrcat(cmd, TEXT("\""));
 	
 	m_TegraRcm->SendUserMessage("Injecting payload...");
@@ -294,7 +293,7 @@ void DialogTab01::OnBnClickedAddFav()
 
 	csPath = csPathf.Left(nIndex);
 	Item = csFilename + _T(" (") + csPath + _T(")");
-	pListBox->AddString(_tcsdup(Item));
+	pListBox->AddString(Item);
 	m_ListBox.Add(csPathf);
 	m_TegraRcm->Favorites.Add(csPathf);
 	m_TegraRcm->SaveFavorites();

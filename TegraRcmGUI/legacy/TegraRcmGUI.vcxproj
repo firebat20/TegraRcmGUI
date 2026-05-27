@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+﻿﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -35,7 +35,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
     <PlatformToolset>v142</PlatformToolset>
@@ -73,6 +73,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <Target Name="ValidateLibUSBK" BeforeTargets="ClCompile">
+    <Error Condition="'$(LIBUSBK_DIR)'==''" Text="LIBUSBK_DIR is not set. Set the LIBUSBK_DIR environment variable or update the project properties to point to libusbK." />
+  </Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
@@ -192,6 +195,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(LIBUSBK_DIR)\bin\lib\$(PlatformShortName.Replace('x64','amd64'))\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Version.lib;libusbK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>AsInvoker</UACExecutionLevel>
+      <EnableUAC>true</EnableUAC>
+      <UACUIAccess>false</UACUIAccess>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -252,9 +258,7 @@
     <None Include="res\TegraRcmGUI.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\..\..\Visual Studio 2015\Projects\TegraRcmGUI\TegraRcmGUI\res\TegraRcmGUI.ico" />
-    <Image Include="res\add.ico" />
-    <Image Include="res\bitmap2.bmp" />
+    <Image Include="res\add.ico" />    <Image Include="res\bitmap2.bmp" />
     <Image Include="res\browse.ico" />
     <Image Include="res\bunch-of-keys.ico" />
     <Image Include="res\delete.ico" />

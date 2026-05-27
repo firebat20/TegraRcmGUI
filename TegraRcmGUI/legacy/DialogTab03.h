@@ -46,6 +46,6 @@ public:
 	afx_msg void OnBnClickedWinstart();
 	afx_msg void OnClickedLogging();
 	void CreateLink();
-	afx_msg void CleanRegestry();
+	afx_msg void CleanRegistry();
 
 };

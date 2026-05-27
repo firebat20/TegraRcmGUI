@@ -18,7 +18,7 @@ public:
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = ID_DIALOGTAB_01 };
 #endif
-	TCHAR* PAYLOAD_FILE;
+	CString PAYLOAD_FILE;
 	BOOL PREVENT_AUTOINJECT = TRUE;
 	BOOL DELAY_AUTOINJECT = TRUE;
 	CArray <CString, CString> m_ListBox;

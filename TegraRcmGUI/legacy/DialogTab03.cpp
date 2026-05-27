@@ -27,7 +27,7 @@ void DialogTab03::DoDataExchange(CDataExchange* pDX)
 BOOL DialogTab03::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	CleanRegestry();
+	CleanRegistry();
 	
 	string value = m_TegraRcm->GetPreset("AUTO_INJECT");
 	if (value == "TRUE")
@@ -181,17 +181,13 @@ void DialogTab03::CreateLink()
 	{
 		PathAppend(szPath, _T("\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\TegraRcmGUI.lnk"));
 	}
-	CoInitializeEx(NULL, 0);
-	HRESULT hres = 0;
-	IShellLink* psl;
+	IShellLink* psl = nullptr;
+	IPersistFile* ppf = nullptr;
+	HRESULT hres = CoInitializeEx(NULL, 0);
 	if (SUCCEEDED(hres)) {
 		hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_ALL, IID_IShellLink, (LPVOID*)&psl);
-		if (SUCCEEDED(hres)) {
-			IPersistFile* ppf;
-
-			// Set the path to the shortcut target and add the description. 
-			//PathAppend(szPath, _T("\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\TegraRcmGUI.lnk"));
-			
+		if (SUCCEEDED(hres) && psl) {
+			// Set the path to the shortcut target and add the description.
 			psl->SetPath(szAppPath);
 			psl->SetArguments(_T("/autostart"));
 			psl->SetDescription(L"TegraRcmGUI");
@@ -204,18 +200,19 @@ void DialogTab03::CreateLink()
 			psl->SetWorkingDirectory(csPath);
 
 			hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&ppf);
-			if (SUCCEEDED(hres)) {
+			if (SUCCEEDED(hres) && ppf) {
 				hres = ppf->Save(szPath, TRUE);
 				ppf->Release();
+				ppf = nullptr;
 			}
 			psl->Release();
+			psl = nullptr;
 		}
-
+		CoUninitialize();
 	}
-	CoUninitialize();
 }
 
-void DialogTab03::CleanRegestry() {
+void DialogTab03::CleanRegistry() {
 	HKEY hKey;
 	const std::string key = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
 	const std::string subkey = "TegraRcmGUI";

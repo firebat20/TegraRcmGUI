@@ -47,6 +47,8 @@ public:
 		{
 			m_bAutostart = TRUE;
 		}
+		// Forward to base class to allow default processing of other parameters
+		CCommandLineInfo::ParseParam(pszParam, bFlag, bLast);
 	}
 };
 

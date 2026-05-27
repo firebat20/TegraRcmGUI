@@ -29,14 +29,14 @@ SOFTWARE.
 #include "TegraRcm.h"
 #include <sstream>
 #include <fstream>
-#include <codecvt>
 
 using namespace std;
 
 TegraRcm::TegraRcm(CDialog* pParent /*=NULL*/)
 {
 	m_Parent = pParent;
-	m_hWnd = AfxGetMainWnd()->GetSafeHwnd();
+	CWnd* pMainWnd = AfxGetMainWnd();
+	m_hWnd = pMainWnd ? pMainWnd->GetSafeHwnd() : NULL;
 	this->LOGGING_CURR = GetPreset("LOGGING") == "TRUE";
 	GetFavorites();
 	//SendUserMessage("Waiting for device in RCM mode");
@@ -100,7 +100,7 @@ BOOL TegraRcm::DestroyTrayIcon()
 }
 BOOL TegraRcm::SetTrayIconTipText(LPCTSTR pszText)
 {
-	if (StringCchCopy(m_NID.szTip, sizeof(m_NID.szTip), pszText) != S_OK)
+	if (StringCchCopy(m_NID.szTip, _countof(m_NID.szTip), pszText) != S_OK)
 		return FALSE;
 
 	m_NID.uFlags |= NIF_TIP;
@@ -112,10 +112,10 @@ BOOL TegraRcm::ShowTrayIconBalloon(LPCTSTR pszTitle, LPCTSTR pszText, UINT unTim
 	m_NID.uTimeout = unTimeout;
 	m_NID.dwInfoFlags = dwInfoFlags;
 
-	if (StringCchCopy(m_NID.szInfoTitle, sizeof(m_NID.szInfoTitle), pszTitle) != S_OK)
+	if (StringCchCopy(m_NID.szInfoTitle, _countof(m_NID.szInfoTitle), pszTitle) != S_OK)
 		return FALSE;
 
-	if (StringCchCopy(m_NID.szInfo, sizeof(m_NID.szInfo), pszText) != S_OK)
+	if (StringCchCopy(m_NID.szInfo, _countof(m_NID.szInfo), pszText) != S_OK)
 		return FALSE;
 
 	return Shell_NotifyIcon(NIM_MODIFY, &m_NID);
@@ -157,7 +157,7 @@ void TegraRcm::ShowContextMenu(HWND hWnd)
 
 			for (int i = 0; i < Favorites.GetCount(); i++)
 			{
-				if (i < 9)
+				if (i < 10)
 				{
 					uID++;
 					int swm;
@@ -330,7 +330,7 @@ void TegraRcm::SetLocale()
 					value = wline.substr(wline.find(delimiter) + 1, wline.length() + 1);
 					CString value2 = value.c_str();
 					value2.Replace(_T('#'), '\n');
-					int intValue = stoi(stringName.c_str());;
+					int intValue = stoi(stringName.c_str());
 					if (intValue > 0) {
 						
 						//TCITEM tcItem1;
@@ -357,6 +357,8 @@ void TegraRcm::SetLocale()
 			}
 		}
 		wif.close();
+		// free buffer returned by GetAbsolutePath
+		free(rfile);
 	}
 }
 
@@ -373,20 +375,29 @@ void TegraRcm::AppendLogBox(CString line) {
 void TegraRcm::UpdateLogBox() {
 	TCHAR *rfile = GetAbsolutePath(TEXT("out.log"), CSIDL_APPDATA);
 	CString Cline;
-	std::wifstream fin(rfile, std::ios::binary);
-	fin.imbue(std::locale(fin.getloc(), new std::codecvt_utf8_utf16<wchar_t>));
-	for (wchar_t c; fin.get(c); ) {
-		CString Cchar(c);
-		if (Cchar == TEXT("\n")) {
-			Cline.Append(TEXT("\r\n"));
-			AppendLogBox(Cline);
-			Cline.Empty();
-		}
-		else if(Cchar != TEXT("\r")) {
-			Cline.Append(Cchar);
+	std::ifstream fin(rfile, std::ios::binary);
+	std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+	fin.close();
+	if (!content.empty()) {
+		int wideLen = MultiByteToWideChar(CP_UTF8, 0, content.data(), (int)content.size(), NULL, 0);
+		if (wideLen > 0) {
+			std::wstring wcontent(wideLen, L'\0');
+			MultiByteToWideChar(CP_UTF8, 0, content.data(), (int)content.size(), &wcontent[0], wideLen);
+			for (wchar_t c : wcontent) {
+				CString Cchar(c);
+				if (Cchar == TEXT("\n")) {
+					Cline.Append(TEXT("\r\n"));
+					AppendLogBox(Cline);
+					Cline.Empty();
+				}
+				else if (Cchar != TEXT("\r")) {
+					Cline.Append(Cchar);
+				}
+			}
 		}
 	}
-	fin.close();
+	// free buffer returned by GetAbsolutePath
+	free(rfile);
 
 }
 
@@ -414,6 +425,8 @@ string TegraRcm::GetPreset(string param)
 		}
 	}
 	readFile.close();
+	// free buffer returned by GetAbsolutePath
+	free(rfile);
 	return value;
 }
 void TegraRcm::SetPreset(string param, string value)
@@ -431,9 +444,9 @@ void TegraRcm::SetPreset(string param, string value)
 		if (readout.find(search) != std::string::npos) {
 			outFile << replace;
 			found = TRUE;
-		}
-		else if(sizeof(readout)>0) {
+		else if(!readout.empty()) {
 			outFile << readout + "\n";
+		}
 		}
 	}
 	if (!found) {
@@ -446,6 +459,10 @@ void TegraRcm::SetPreset(string param, string value)
 
 	CString paramStr(param.c_str()), valueStr(value.c_str());
 	AppendLogBox(TEXT("Preset \"") + paramStr + TEXT("\" set to : ") + valueStr + TEXT("\r\n"));
+
+	// free buffers returned by GetAbsolutePath
+	free(rfile);
+	free(wfile);
 
 }
 void TegraRcm::GetFavorites()
@@ -491,6 +508,9 @@ void TegraRcm::GetFavorites()
 			
 			Favorites.Add(fav);
 		}
+		readFile.close();
+		// free buffer returned by GetAbsolutePath
+		free(rfile);
 	}
 	else {
 		AppendLog("Error reading favorites.conf");
@@ -509,8 +529,8 @@ void TegraRcm::AddFavorite(CString value)
 
 	CT2A pPath(csPath.GetBuffer(csPath.GetLength()));
 	CT2A pvalue(value.GetBuffer(value.GetLength()));
-	char* rvalue = GetRelativeFilename(pPath, pvalue);
-	value = rvalue;
+	std::string rvalue = GetRelativeFilename(std::string(pPath), std::string(pvalue));
+	value = CString(rvalue.c_str());
 
 	/*
 	if (value.Find(csPath) != -1)
@@ -524,9 +544,11 @@ void TegraRcm::AddFavorite(CString value)
 	CT2CA pszConvertedAnsiString(CoutLine);
 	std::string outLine = pszConvertedAnsiString;
 	fstream outFile;
-	outFile.open(GetAbsolutePath(TEXT("favorites.conf"), CSIDL_APPDATA), fstream::in | fstream::out | fstream::app);
+	TCHAR *favPath = GetAbsolutePath(TEXT("favorites.conf"), CSIDL_APPDATA);
+	outFile.open(favPath, fstream::in | fstream::out | fstream::app);
 	outFile << outLine;
 	outFile.close();
+	free(favPath);
 
 }
 void TegraRcm::SaveFavorites()
@@ -537,6 +559,8 @@ void TegraRcm::SaveFavorites()
 	{
 		AddFavorite(Favorites[i]);
 	}
+	// free buffer returned by GetAbsolutePath
+	free(rfile);
 }
 //
 // User message & log
@@ -565,9 +589,11 @@ void TegraRcm::AppendLog(string message)
 
 	// Append line in log file
 	fstream outFile;
-	outFile.open(GetAbsolutePath(TEXT("output_log.txt"), CSIDL_APPDATA), fstream::in | fstream::out | fstream::app);
+	TCHAR *outPath = GetAbsolutePath(TEXT("output_log.txt"), CSIDL_APPDATA);
+	outFile.open(outPath, fstream::in | fstream::out | fstream::app);
 	outFile << outline;
 	outFile.close();
+	free(outPath);
 }
 void TegraRcm::SendUserMessage(string message, int type)
 {
@@ -628,7 +654,6 @@ void TegraRcm::InstallDriver()
 	}
 	ASK_FOR_DRIVER = TRUE;
 }
-typedef int(__cdecl *MYPROC)(LPWSTR);
 BOOL TegraRcm::LookForAPXDevice()
 {
 	unsigned index;
@@ -637,16 +662,22 @@ BOOL TegraRcm::LookForAPXDevice()
 	TCHAR HardwareID[1024];
 	// List all connected USB devices
 	hDevInfo = SetupDiGetClassDevs(NULL, TEXT("USB"), NULL, DIGCF_PRESENT | DIGCF_ALLCLASSES);
+	if (hDevInfo == INVALID_HANDLE_VALUE) {
+		return FALSE;
+	}
 	for (index = 0; ; index++) {
 		DeviceInfoData.cbSize = sizeof(DeviceInfoData);
 		if (!SetupDiEnumDeviceInfo(hDevInfo, index, &DeviceInfoData)) {
+			SetupDiDestroyDeviceInfoList(hDevInfo);
 			return FALSE;     // no match
 		}
 		SetupDiGetDeviceRegistryProperty(hDevInfo, &DeviceInfoData, SPDRP_HARDWAREID, NULL, (BYTE*)HardwareID, sizeof(HardwareID), NULL);
 		if (_tcsstr(HardwareID, _T("VID_0955&PID_7321"))) {
+			SetupDiDestroyDeviceInfoList(hDevInfo);
 			return TRUE;     // match
 		}
 	}
+	SetupDiDestroyDeviceInfoList(hDevInfo);
 	return FALSE;
 }
 
@@ -771,9 +802,9 @@ void TegraRcm::LookUp()
 			{
 
 				BitmapDisplay(LOADING);
-				PAYLOAD_FILE = _tcsdup(file);
+				PAYLOAD_FILE = file;
 				TCHAR cmd[MAX_PATH] = TEXT("\"");
-				lstrcat(cmd, PAYLOAD_FILE);
+				lstrcat(cmd, (LPCTSTR)PAYLOAD_FILE);
 				lstrcat(cmd, TEXT("\""));
 
 				int rc = Smasher(cmd);
@@ -867,7 +898,10 @@ int TegraRcm::Smasher(TCHAR args[4096], BOOL bInheritHandles)
 	if (nIndex > 0) csPath = csPathf.Left(nIndex);
 	else csPath.Empty();
 	CString csPath2(csPath);
-	csPath.Append(TEXT(".\\TegraRcmSmash.exe "));
+	// Ensure a single backslash before the executable name
+	if (!csPath.IsEmpty() && csPath.Right(1) != _T("\\"))
+		csPath.Append(_T("\\"));
+	csPath.Append(TEXT("TegraRcmSmash.exe "));
 	TCHAR cmd[4096];
 	_tcscpy_s(cmd, 4095, csPath);
 	lstrcat(cmd, args);
@@ -889,16 +923,17 @@ int TegraRcm::Smasher(TCHAR args[4096], BOOL bInheritHandles)
 	si.cb = sizeof(STARTUPINFO);
 	si.dwFlags |= STARTF_USESTDHANDLES;
 	si.hStdInput = NULL;
+	HANDLE hLog = NULL;
 	if (bInheritHandles) {
-	    HANDLE h = CreateFile(rfile,
+		hLog = CreateFile(rfile,
 			GENERIC_WRITE,
 			FILE_SHARE_WRITE | FILE_SHARE_READ,
 			&sa,
 			OPEN_ALWAYS,
 			FILE_ATTRIBUTE_NORMAL,
 			NULL);
-		si.hStdError = h;
-		si.hStdOutput = h;
+		si.hStdError = hLog;
+		si.hStdOutput = hLog;
 	}
 
 	CString argsStr(args);
@@ -930,8 +965,13 @@ int TegraRcm::Smasher(TCHAR args[4096], BOOL bInheritHandles)
 		{
 			rc = -51;
 		}
+		// Close process handles
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
+		// Close log file handle if opened
+		if (hLog && hLog != INVALID_HANDLE_VALUE) {
+			CloseHandle(hLog);
+		}
 	}
 	else {
 		int lastErrorCode = GetLastError();
@@ -954,6 +994,8 @@ int TegraRcm::Smasher(TCHAR args[4096], BOOL bInheritHandles)
 	if (bInheritHandles) {
 		UpdateLogBox();
 	}
+	// free buffer returned by GetAbsolutePath
+	free(rfile);
 	return rc;
 }
 //
@@ -1103,94 +1145,65 @@ TCHAR* TegraRcm::GetAbsolutePath(TCHAR* relative_path, DWORD  dwFlags)
 // Given the absolute current directory and an absolute file name, returns a relative file name.
 // For example, if the current directory is C:\foo\bar and the filename C:\foo\whee\text.txt is given,
 // GetRelativeFilename will return ..\whee\text.txt.
-char* TegraRcm::GetRelativeFilename(char *currentDirectory, char *absoluteFilename)
+std::string TegraRcm::GetRelativeFilename(const std::string& currentDirectory, const std::string& absoluteFilename)
 {
-	// declarations - put here so this should work in a C compiler
 	int afMarker = 0, rfMarker = 0;
-	int cdLen = 0, afLen = 0;
+	int cdLen = (int)currentDirectory.size();
+	int afLen = (int)absoluteFilename.size();
 	int i = 0;
 	int levels = 0;
-	static char relativeFilename[MAX_FILENAME_LEN + 1];
-	cdLen = strlen(currentDirectory);
-	afLen = strlen(absoluteFilename);
 
-	// make sure the names are not too long or too short
-	if (cdLen > MAX_FILENAME_LEN || cdLen < ABSOLUTE_NAME_START + 1 ||
-		afLen > MAX_FILENAME_LEN || afLen < ABSOLUTE_NAME_START + 1)
-	{
-		return NULL;
-	}
+	// Basic validation
+	if (cdLen < ABSOLUTE_NAME_START + 1 || afLen < ABSOLUTE_NAME_START + 1)
+		return std::string();
 
-	// Handle DOS names that are on different drives:
+	// Different drive? return absolute
 	if (currentDirectory[0] != absoluteFilename[0])
 	{
-		// not on the same drive, so only absolute filename will do
-		strcpy_s(relativeFilename, MAX_FILENAME_LEN, absoluteFilename);
-		return relativeFilename;
+		return absoluteFilename;
 	}
-	// they are on the same drive, find out how much of the current directory
-	// is in the absolute filename
+
 	i = ABSOLUTE_NAME_START;
 	while (i < afLen && i < cdLen && currentDirectory[i] == absoluteFilename[i])
 	{
 		i++;
 	}
+
 	if (i == cdLen && (absoluteFilename[i] == SLASH || absoluteFilename[i - 1] == SLASH))
 	{
-		// the whole current directory name is in the file name,
-		// so we just trim off the current directory name to get the
-		// current file name.
-		if (absoluteFilename[i] == SLASH)
-		{
-			// a directory name might have a trailing slash but a relative
-			// file name should not have a leading one...
-			i++;
-		}
-		strcpy_s(relativeFilename, MAX_FILENAME_LEN, &absoluteFilename[i]);
-		return relativeFilename;
+		// Trim leading slash if present
+		size_t start = (absoluteFilename[i] == SLASH) ? i + 1 : i;
+		return absoluteFilename.substr(start);
 	}
-	// The file is not in a child directory of the current directory, so we
-	// need to step back the appropriate number of parent directories by
-	// using "..\"s.  First find out how many levels deeper we are than the
-	// common directory
+
 	afMarker = i;
 	levels = 1;
-	// count the number of directory levels we have to go up to get to the
-	// common directory
 	while (i < cdLen)
 	{
 		i++;
-		if (currentDirectory[i] == SLASH)
+		if (i < cdLen && currentDirectory[i] == SLASH)
 		{
-			// make sure it's not a trailing slash
 			i++;
-			if (currentDirectory[i] != '\0')
+			if (i < cdLen && currentDirectory[i] != '\0')
 			{
 				levels++;
 			}
 		}
 	}
-	// move the absolute filename marker back to the start of the directory name
-	// that it has stopped in.
+
 	while (afMarker > 0 && absoluteFilename[afMarker - 1] != SLASH)
 	{
 		afMarker--;
 	}
-	// check that the result will not be too long
-	if (levels * 3 + afLen - afMarker > MAX_FILENAME_LEN)
-	{
-		return NULL;
-	}
 
-	// add the appropriate number of "..\"s.
-	rfMarker = 0;
-	for (i = 0; i < levels; i++)
+	std::string result;
+	result.reserve(levels * 3 + (afLen - afMarker));
+	for (int j = 0; j < levels; ++j)
 	{
-		relativeFilename[rfMarker++] = '.';
-		relativeFilename[rfMarker++] = '.';
-		relativeFilename[rfMarker++] = SLASH;
+		result.append("..\\");
 	}
-	// copy the rest of the filename into the result string
-	strcpy_s(&relativeFilename[rfMarker], MAX_FILENAME_LEN, &absoluteFilename[afMarker]);
-	return relativeFilename;
+	if (afMarker < afLen)
+		result.append(absoluteFilename.substr(afMarker));
+
+	return result;
 }

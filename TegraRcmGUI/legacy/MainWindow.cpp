@@ -102,16 +102,14 @@ void MainWindow::on_btnBrowsePayload_clicked()
 
 void MainWindow::on_btnInject_clicked()
 {
+    // TODO: Implement when UI integration is complete
     // QString payloadPath = ui->payloadPathLineEdit->text();
-    QString payloadPath; // Placeholder mapping
-    if (payloadPath.isEmpty()) {
-        QMessageBox::warning(this, "Error", "Please select a payload file first.");
-        return;
-    }
-
-    // Qt uses QtConcurrent or QThread for non-blocking. 
-    // Wait for full Qt threading integration; for now we run it inline or spawn a process.
-    m_payloadController->InjectPayload(payloadPath.toStdWString());
+    // if (payloadPath.isEmpty()) {
+    //     QMessageBox::warning(this, "Error", "Please select a payload file first.");
+    //     return;
+    // }
+    // m_payloadController->InjectPayload(payloadPath.toStdWString());
+    QMessageBox::information(this, "Not Implemented", "Payload injection UI not yet wired.");
 }
 
 void MainWindow::appendLogMessage(const QString& message)

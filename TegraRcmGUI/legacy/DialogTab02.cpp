@@ -30,7 +30,6 @@ SOFTWARE.
 #include "afxdialogex.h"
 #include "DialogTab02.h"
 #include <stdlib.h>
-#include <codecvt>
 
 using namespace std;
 
@@ -194,7 +193,7 @@ void DialogTab02::OnBnClickedShofel2()
 
 	if (!coreboot_exists || !payload_exists) {
 		//GetParent()->SetDlgItemText(INFO_LABEL, TEXT("Linux coreboot not found in \\shofel2 dir"));
-		m_TegraRcm->AppendLogBox(TEXT("Linux coreboot not found in \\shofel2 di\r\n"));
+		m_TegraRcm->AppendLogBox(TEXT("Linux coreboot not found in \\shofel2 dir\r\n"));
 
 		CString message = _T("Kernel not found in shofel2 directory. Do you want to automatically download arch linux kernel from SoulCipher repo ?");
 		const int result = MessageBox(message, _T("Kernel not found"), MB_YESNOCANCEL | MB_ICONQUESTION);
@@ -206,20 +205,24 @@ void DialogTab02::OnBnClickedShofel2()
 			si.cb = sizeof(si);
 			TCHAR *download_script = m_TegraRcm->GetAbsolutePath(TEXT("tools\\shofel2\\download.bat"), CSIDL_APPDATA);
 			BOOL bRet = CreateProcess(download_script, NULL, NULL, NULL, FALSE, 0, NULL, exe_dir, &si, &pif);
+			free(download_script);
+			free(COREBOOT_FILE);
+			free(PAYLOAD);
+			free(exe_dir);
 		}
 		return; // TO-DO : Remove return for coreboot injection after download
 	}
 	m_TegraRcm->BitmapDisplay(LOADING);
 	GetParent()->UpdateWindow();
 	//GetParent()->SetDlgItemText(INFO_LABEL, TEXT("Loading coreboot. Please wait."));
-	m_TegraRcm->AppendLogBox(TEXT("Linux coreboot not found in \\shofel2 di\r\n"));
+	m_TegraRcm->AppendLogBox(TEXT("Loading coreboot...\r\n"));
 
 
 	//int rc = device.SmashMain(5, args);
 	TCHAR cmd[4096] = TEXT("--relocator= \"");
-	lstrcat(cmd, _tcsdup(PAYLOAD));
+	lstrcat(cmd, PAYLOAD);
 	lstrcat(cmd, TEXT("\" \"CBFS:"));
-	lstrcat(cmd, _tcsdup(COREBOOT_FILE));
+	lstrcat(cmd, COREBOOT_FILE);
 	lstrcat(cmd, TEXT("\""));
 	int rc = m_TegraRcm->Smasher(cmd, FALSE);
 	int test = 1;
@@ -252,6 +255,9 @@ void DialogTab02::OnBnClickedShofel2()
 			CloseHandle(pif.hThread);
 		}
 
+			// free imx script path
+			free(imx_script);
+
 		if (rc == 0)
 		{
 			m_TegraRcm->BitmapDisplay(LOADED);
@@ -277,6 +283,11 @@ void DialogTab02::OnBnClickedShofel2()
 	//GetParent()->SetDlgItemText(INFO_LABEL, wt2);
 	CString ss(s.c_str());
 	m_TegraRcm->AppendLogBox(ss + TEXT("\r\n"));
+
+	// free allocated paths
+	free(COREBOOT_FILE);
+	free(PAYLOAD);
+	free(exe_dir);
 
 }
 
@@ -308,12 +319,20 @@ void DialogTab02::OnBnClickedDumpBiskey()
 	BOOL keyFound = FALSE;
 	TCHAR *rfile = m_TegraRcm->GetAbsolutePath(TEXT("out.log"), CSIDL_APPDATA);
 	CString Cline;
-	std::wifstream fin(rfile, std::ios::binary);
-	fin.imbue(std::locale(fin.getloc(), new std::codecvt_utf8_utf16<wchar_t>));
 	CString Filename;
-	for (wchar_t c; fin.get(c); ) {
-		CString Cchar(c);
-		if (Cchar == TEXT("\n")) {
+	std::ifstream fin(rfile, std::ios::binary);
+	std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+	fin.close();
+	// free GetAbsolutePath buffer
+	free(rfile);
+	if (!content.empty()) {
+		int wideLen = MultiByteToWideChar(CP_UTF8, 0, content.data(), (int)content.size(), NULL, 0);
+		if (wideLen > 0) {
+			std::wstring wcontent(wideLen, L'\0');
+			MultiByteToWideChar(CP_UTF8, 0, content.data(), (int)content.size(), &wcontent[0], wideLen);
+			for (wchar_t c : wcontent) {
+				CString Cchar(c);
+				if (Cchar == TEXT("\n")) {
 			
 			if (Cline.Find(TEXT("HWI")) != -1 ||
 				Cline.Find(TEXT("SBK")) != -1 ||
@@ -360,7 +379,6 @@ void DialogTab02::OnBnClickedDumpBiskey()
 			Cline.Append(Cchar);
 		}
 	}
-	fin.close();
 
 
 	CString s;

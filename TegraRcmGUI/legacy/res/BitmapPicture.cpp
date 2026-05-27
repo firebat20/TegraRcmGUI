@@ -48,9 +48,26 @@ END_MESSAGE_MAP()
 
 BOOL CBitmapPicture::SetBitmap(HBITMAP hBitmap)
 {
-    ::DeleteObject(m_hBitmap);
-    m_hBitmap = hBitmap;
-    return ::GetObject(m_hBitmap, sizeof(BITMAP), &m_bmInfo);
+    // Do not take ownership of the caller's HBITMAP. Instead duplicate it
+    // and store our own copy. This leaves the caller's handle untouched.
+    if (m_hBitmap)
+        ::DeleteObject(m_hBitmap);
+
+    if (!hBitmap) {
+        m_hBitmap = NULL;
+        ZeroMemory(&m_bmInfo, sizeof(m_bmInfo));
+        return FALSE;
+    }
+
+    HBITMAP hCopy = (HBITMAP)::CopyImage(hBitmap, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+    if (!hCopy) {
+        m_hBitmap = NULL;
+        ZeroMemory(&m_bmInfo, sizeof(m_bmInfo));
+        return FALSE;
+    }
+
+    m_hBitmap = hCopy;
+    return (::GetObject(m_hBitmap, sizeof(BITMAP), &m_bmInfo) != 0);
 }
 
 BOOL CBitmapPicture::SetBitmap(UINT nIDResource)
@@ -64,7 +81,9 @@ BOOL CBitmapPicture::SetBitmap(UINT nIDResource)
                                         0,0, 
                                         LR_LOADMAP3DCOLORS);
     if (!hBmp) return FALSE;
-    return CBitmapPicture::SetBitmap(hBmp);
+    BOOL bRes = CBitmapPicture::SetBitmap(hBmp);
+    ::DeleteObject(hBmp); // we're duplicating internally, so free the loaded bitmap
+    return bRes;
 }
 
 BOOL CBitmapPicture::SetBitmap(LPCTSTR lpszResourceName)
@@ -78,10 +97,12 @@ BOOL CBitmapPicture::SetBitmap(LPCTSTR lpszResourceName)
                                         0,0, 
                                         LR_LOADMAP3DCOLORS);
     if (!hBmp) return FALSE;
-    return CBitmapPicture::SetBitmap(hBmp);
+    BOOL bRes = CBitmapPicture::SetBitmap(hBmp);
+    ::DeleteObject(hBmp);
+    return bRes;
 }
 
-// Suggested by Pål K. Used to reload the bitmap on system colour changes.
+// Suggested by Pï¿½l K. Used to reload the bitmap on system colour changes.
 BOOL CBitmapPicture::ReloadBitmap()
 {
     if (m_nResourceID > 0) 
@@ -119,15 +140,15 @@ BOOL CBitmapPicture::OnEraseBkgnd(CDC* pDC)
 
     // Create compatible memory DC using the controls DC
     CDC dcMem;
-    VERIFY( dcMem.CreateCompatibleDC(pDC));
+    if (!dcMem.CreateCompatibleDC(pDC))
+        return FALSE;
     
     // Select bitmap into memory DC.
     HBITMAP* pBmpOld = (HBITMAP*) ::SelectObject(dcMem.m_hDC, m_hBitmap);
 
-    // StretchBlt bitmap onto static's client area
 #ifdef UPDATE_ENTIRE_CLIENT_AREA
     pDC->StretchBlt(rect.left, rect.top, rect.Width(), rect.Height(), 
-                     &dcMem, 0, 0, m_bmInfo.bmWidth-1, m_bmInfo.bmHeight-1,
+                     &dcMem, 0, 0, m_bmInfo.bmWidth, m_bmInfo.bmHeight,
                      SRCCOPY);
 #else
     CRect TargetRect;                // Region on screen to be updated
@@ -150,10 +171,10 @@ BOOL CBitmapPicture::OnEraseBkgnd(CDC* pDC)
 
     return TRUE;
 }
-
 void CBitmapPicture::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 {
-    ASSERT(lpDrawItemStruct != NULL);
+    if (lpDrawItemStruct == NULL)
+        return;
     
     CString str;
     GetWindowText(str);
@@ -174,7 +195,7 @@ void CBitmapPicture::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
     pDC->SetBkMode(nOldMode);
 }
 
-// Suggested by Pål K. Tønder.
+// Suggested by Pï¿½l K. Tï¿½nder.
 void CBitmapPicture::OnSysColorChange() 
 {
     CStatic::OnSysColorChange();
