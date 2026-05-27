@@ -11,13 +11,11 @@ find_package(Qt6 COMPONENTS Core Gui Widgets Quick QuickControls2 Concurrent REQ
 set(BACKEND_SOURCES
     TegraRcmSmash.cpp
     PayloadController.cpp
-    SettingsManager.cpp
 )
 
 set(BACKEND_HEADERS
     TegraRcmSmash.h
     PayloadController.h
-    SettingsManager.h
     libusbk_int.h
     ScopeGuard.h
     Types.h
