@@ -1,9 +1,7 @@
 #include <QApplication>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
 #include <QQuickStyle>
 #include <QCoreApplication>
-#include "AppController.h"
 
 int main(int argc, char *argv[])
 {
@@ -14,13 +12,12 @@ int main(int argc, char *argv[])
 
     QQuickStyle::setStyle("Fusion");
 
-    AppController controller;
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("appController", &controller);
-    engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/TegraRcm/main.qml")));
 
     if (engine.rootObjects().isEmpty())
         return -1;
 
     return app.exec();
 }
+

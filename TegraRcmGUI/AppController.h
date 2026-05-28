@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QtQml/qqmlregistration.h>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
@@ -13,6 +14,8 @@
 class AppController : public QObject
 {
     Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
     Q_PROPERTY(QString payloadPath READ payloadPath WRITE setPayloadPath NOTIFY payloadPathChanged)
     Q_PROPERTY(QString theme READ theme NOTIFY themeChanged)
     Q_PROPERTY(bool autoInject READ autoInject NOTIFY autoInjectChanged)

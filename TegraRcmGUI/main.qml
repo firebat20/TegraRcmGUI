@@ -3,9 +3,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtCore
+import TegraRcm
 
 ApplicationWindow {
     id: root
+    readonly property AppController appController: AppController
     width: 920
     height: 660
     visible: true
@@ -45,7 +47,7 @@ ApplicationWindow {
     FileDialog {
         id: payloadDialog
         title: qsTr("Select Payload")
-        currentFolder: StandardPaths.writableLocation(StandardPaths.HomeLocation)
+        currentFolder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
         nameFilters: [qsTr("Bin Files (*.bin)"), qsTr("All Files (*)")]
         onAccepted: {
             appController.setPayloadPath(selectedFile)
